@@ -781,25 +781,27 @@ void ACarlaWheeledVehicle::SetWheelSteerDirection(EVehicleWheelLocation WheelLoc
   }
 }
 
-float ACarlaWheeledVehicle::GetWheelSteerAngle(EVehicleWheelLocation WheelLocation) {
+float ACarlaWheeledVehicle::GetWheelSteerAngle(EVehicleWheelLocation WheelLocation)
+{
+  UChaosWheeledVehicleMovementComponent *Movement =
+    GetChaosWheeledVehicleMovementComponent();
+  const int32 WheelIndex = static_cast<int32>(WheelLocation);
+  if (Movement == nullptr || !Movement->Wheels.IsValidIndex(WheelIndex))
+  {
+    UE_LOG(LogCarla, Warning,
+      TEXT("Cannot read steer angle for invalid wheel index %d"), WheelIndex);
+    return 0.0F;
+  }
 
-#if 0 // @CARLAUE5     // ToDo We need to investigate about this
-  check((uint8)WheelLocation >= 0)
-    UVehicleAnimationInstance* VehicleAnim = Cast<UVehicleAnimationInstance>(GetMesh()->GetAnimInstance());
-  check(VehicleAnim != nullptr)
-    check(VehicleAnim->GetWheeledVehicleMovementComponent() != nullptr)
-
-    if (bPhysicsEnabled == true)
-    {
-      return VehicleAnim->GetWheeledVehicleMovementComponent()->Wheels[(uint8)WheelLocation]->GetSteerAngle();
-    }
-    else
-    {
-      return VehicleAnim->GetWheelRotAngle((uint8)WheelLocation);
-    }
-#else
-  return 0.0F;
-#endif
+  const auto &Wheel = Movement->Wheels[WheelIndex];
+  if (!Wheel)
+  {
+    UE_LOG(LogCarla, Warning,
+      TEXT("Cannot read steer angle for uninitialized wheel index %d"),
+      WheelIndex);
+    return 0.0F;
+  }
+  return Wheel->GetSteerAngle();
 }
 
 void ACarlaWheeledVehicle::SetSimulatePhysics(bool enabled) {
