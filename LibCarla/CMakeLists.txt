@@ -385,14 +385,11 @@ if (BUILD_CARLA_CLIENT)
 
   # Install + find_package(Carla) integration — closes #6091.
   #
-  # carla-client links a number of vendored static libs (Boost, Recast,
-  # png, zlib, rpc) that are not themselves exported. We can't use
-  # install(EXPORT ...) for this reason. Instead we install the static
-  # archive + public headers + a hand-rolled CarlaConfig.cmake that
-  # declares Carla::carla-client as an IMPORTED STATIC target.
-  # Downstream consumers also need to provide system equivalents of
-  # the vendored deps (Boost, zlib) — see Examples/CppClient/Standalone/
-  # README.md for the practical recipe.
+  # LibCarla's public headers expose Boost, rpclib, and Recast types, while its
+  # static archive depends on their static libraries plus libpng and zlib. A
+  # usable standalone package must therefore install the exact dependency
+  # headers and archives used for this build. The hand-written package config
+  # below attaches those archives transitively to Carla::carla-client.
   include (GNUInstallDirs)
   include (CMakePackageConfigHelpers)
 
@@ -411,14 +408,109 @@ if (BUILD_CARLA_CLIENT)
       PATTERN "*.inl"
   )
 
+  # Boost's CMake distribution keeps public headers in one include directory
+  # per module. Install all module include trees into one conventional prefix;
+  # overlapping directories are intentional and contain different headers.
+  file (GLOB CARLA_BOOST_PUBLIC_INCLUDE_DIRS
+    LIST_DIRECTORIES true
+    "${boost_SOURCE_DIR}/libs/*/include"
+    "${boost_SOURCE_DIR}/libs/*/*/include"
+  )
+  foreach (CARLA_BOOST_INCLUDE_DIR IN LISTS CARLA_BOOST_PUBLIC_INCLUDE_DIRS)
+    install (
+      DIRECTORY "${CARLA_BOOST_INCLUDE_DIR}/"
+      DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+  endforeach ()
+
+  install (
+    DIRECTORY ${rpclib_SOURCE_DIR}/include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
+  install (
+    DIRECTORY
+      ${recastnavigation_SOURCE_DIR}/Recast/Include/
+      ${recastnavigation_SOURCE_DIR}/Detour/Include/
+      ${recastnavigation_SOURCE_DIR}/DetourCrowd/Include/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
+  install (
+    FILES
+      ${libpng_SOURCE_DIR}/png.h
+      ${libpng_SOURCE_DIR}/pngconf.h
+      ${libpng_BINARY_DIR}/pnglibconf.h
+      ${zlib_SOURCE_DIR}/zlib.h
+      ${zlib_BINARY_DIR}/zconf.h
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )
+
+  set (CARLA_CLIENT_STATIC_DEPENDENCY_TARGETS
+    boost_context
+    boost_graph
+    boost_random
+    boost_serialization
+    boost_thread
+    boost_date_time
+    boost_container
+    boost_atomic
+    boost_chrono
+    boost_filesystem
+    Recast
+    DetourCrowd
+    Detour
+    png_static
+    zlibstatic
+    rpc
+  )
+  foreach (CARLA_DEPENDENCY_TARGET IN LISTS CARLA_CLIENT_STATIC_DEPENDENCY_TARGETS)
+    install (
+      FILES $<TARGET_FILE:${CARLA_DEPENDENCY_TARGET}>
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+  endforeach ()
+
+  install (
+    FILES ${boost_SOURCE_DIR}/LICENSE_1_0.txt
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/Carla
+    RENAME Boost-LICENSE_1_0.txt
+  )
+  install (
+    FILES ${rpclib_SOURCE_DIR}/LICENSE.md
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/Carla
+    RENAME rpclib-LICENSE.md
+  )
+  install (
+    FILES ${recastnavigation_SOURCE_DIR}/License.txt
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/Carla
+    RENAME RecastNavigation-License.txt
+  )
+  install (
+    FILES ${libpng_SOURCE_DIR}/LICENSE
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/Carla
+    RENAME libpng-LICENSE
+  )
+  install (
+    FILES ${zlib_SOURCE_DIR}/LICENSE
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/Carla
+    RENAME zlib-LICENSE
+  )
+
   write_basic_package_version_file (
     ${CMAKE_CURRENT_BINARY_DIR}/CarlaConfigVersion.cmake
     VERSION       ${CARLA_VERSION}
     COMPATIBILITY SameMajorVersion
   )
 
-  string (REPLACE ";" " " CARLA_EXPORTED_DEFINITIONS
-    "${CARLA_COMMON_DEFINITIONS};${CARLA_EXCEPTION_DEFINITIONS};${CARLA_RTTI_DEFINITIONS}")
+  set (CARLA_EXPORTED_DEFINITIONS
+    ${CARLA_COMMON_DEFINITIONS}
+    ${CARLA_EXCEPTION_DEFINITIONS}
+    ${CARLA_RTTI_DEFINITIONS}
+    BOOST_ALL_NO_LIB
+    RPCLIB_MSGPACK=clmdep_msgpack
+  )
+  if (APPLE)
+    list (APPEND CARLA_EXPORTED_DEFINITIONS RPCLIB_MAC)
+  endif ()
 
   configure_package_config_file (
     ${CARLA_WORKSPACE_PATH}/CMake/CarlaConfig.cmake.in

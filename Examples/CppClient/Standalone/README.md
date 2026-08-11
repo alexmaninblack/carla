@@ -25,6 +25,10 @@ This installs:
 /opt/carla/lib/cmake/Carla/CarlaConfigVersion.cmake
 ```
 
+The prefix also contains the exact public dependency headers and static
+libraries used by that LibCarla build. Consumers do not need to find separate
+system copies of Boost, rpclib, Recast, libpng, or zlib.
+
 ## Step 2 — Build the consumer project
 
 ```bash

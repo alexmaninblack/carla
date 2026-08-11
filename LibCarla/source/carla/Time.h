@@ -55,9 +55,11 @@ namespace carla {
       return std::chrono::milliseconds(_milliseconds);
     }
 
+#if __has_include(<boost/date_time/posix_time/posix_time_types.hpp>)
     operator boost::posix_time::time_duration() const {
       return to_posix_time();
     }
+#endif
 
     constexpr size_t milliseconds() const noexcept {
       return _milliseconds;
