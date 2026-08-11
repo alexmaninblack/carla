@@ -38,6 +38,7 @@ public class Carla :
     PrivatePCHHeaderFile = "Carla.h";
     bEnableExceptions = true;
     bUseRTTI = true;
+    ShadowVariableWarningLevel = WarningLevel.Warning;
     
     void AddDynamicLibrary(string library)
     {
