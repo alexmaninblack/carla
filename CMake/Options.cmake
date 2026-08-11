@@ -185,6 +185,8 @@ if (WIN32)
   set (CARLA_UNREAL_RHI_DEFAULT d3d12)
 elseif (LINUX)
   set (CARLA_UNREAL_RHI_DEFAULT vulkan)
+elseif (APPLE)
+  set (CARLA_UNREAL_RHI_DEFAULT metal)
 endif ()
 
 carla_string_option (

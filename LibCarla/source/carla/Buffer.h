@@ -82,6 +82,13 @@ namespace carla {
           return static_cast<size_type>(size);
         } ()) {}
 
+#ifdef __APPLE__
+    /// On Apple platforms size_t and uint64_t are distinct 64-bit types. This
+    /// overload prevents ambiguous conversions against the uint32_t overload.
+    explicit Buffer(size_t size)
+      : Buffer(static_cast<uint64_t>(size)) {}
+#endif
+
     /// Copy @a source into this buffer. Allocates the necessary memory.
     template <typename T>
     explicit Buffer(const T &source) {
@@ -100,6 +107,11 @@ namespace carla {
           }
           return static_cast<size_type>(size);
         } ()) {}
+
+#ifdef __APPLE__
+    explicit Buffer(const value_type *data, size_t size)
+      : Buffer(data, static_cast<uint64_t>(size)) {}
+#endif
 
     Buffer(const Buffer &) = delete;
 
@@ -266,6 +278,12 @@ namespace carla {
       reset(static_cast<size_type>(size));
     }
 
+#ifdef __APPLE__
+    void reset(size_t size) {
+      reset(static_cast<uint64_t>(size));
+    }
+#endif
+
     /// Resize the buffer, a new block of size @a size is
     /// allocated if the capacity is not enough and the data is copied.
     void resize(uint64_t size) {
@@ -322,7 +340,7 @@ namespace carla {
     template <typename T>
     typename std::enable_if<boost::asio::is_const_buffer_sequence<T>::value>::type
     copy_from(size_type offset, const T &source) {
-      reset(boost::asio::buffer_size(source) + offset);
+      reset(static_cast<uint64_t>(boost::asio::buffer_size(source)) + offset);
       DEBUG_ASSERT(boost::asio::buffer_size(source) == size() - offset);
       DEBUG_ONLY(auto bytes_copied = )
       boost::asio::buffer_copy(buffer() + offset, source);

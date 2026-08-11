@@ -132,11 +132,24 @@ carla_dependency_option (PNG_TESTS OFF)
 carla_dependency_option (PNG_TOOLS OFF)
 carla_dependency_option (PNG_DEBUG OFF)
 carla_dependency_option (PNG_HARDWARE_OPTIMIZATIONS ON)
+
+set (CARLA_LIBPNG_PATCH_ARGS)
+if (APPLE)
+  list (
+    APPEND CARLA_LIBPNG_PATCH_ARGS
+    PATCH_COMMAND
+      ${CMAKE_COMMAND}
+      -DSOURCE_DIR=<SOURCE_DIR>
+      -P ${CARLA_WORKSPACE_PATH}/CMake/Patches/PatchLibPngMacOS.cmake
+  )
+endif ()
+
 carla_dependency_add (
   libpng
   ${CARLA_LIBPNG_TAG}
   https://github.com/pnggroup/libpng/archive/refs/tags/${CARLA_LIBPNG_TAG}.zip
   https://github.com/pnggroup/libpng.git
+  ${CARLA_LIBPNG_PATCH_ARGS}
 )
 carla_dependencies_make_available ()
 include_directories (
@@ -151,13 +164,16 @@ set (
   BOOST_INCLUDED_PROJECTS
   asio
   iterator
-  python
   date_time
   geometry
   container
   variant2
   gil
 )
+
+if (BUILD_PYTHON_API)
+  list (APPEND BOOST_INCLUDED_PROJECTS python)
+endif ()
 set (
   BOOST_EXCLUDED_PROJECTS
   # filesystem # <- Boost.GIL links with Boost.filesystem, so we can't remove the dependency yet.

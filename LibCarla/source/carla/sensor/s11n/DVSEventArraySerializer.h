@@ -55,7 +55,8 @@ namespace s11n {
     };
 
     /// Reset the output buffer
-    output.reset(sizeof(DVSHeader) + (events.size() * sizeof(data::DVSEvent)));
+    output.reset(static_cast<uint64_t>(sizeof(DVSHeader)) +
+        (static_cast<uint64_t>(events.size()) * sizeof(data::DVSEvent)));
 
     /// Pointer to data in buffer
     unsigned char *it = output.data();

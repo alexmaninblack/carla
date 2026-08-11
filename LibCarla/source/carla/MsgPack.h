@@ -8,7 +8,21 @@
 
 #include "carla/Buffer.h"
 
+// Legacy Apple headers define `nil` as a macro, which collides with
+// msgpack's `nil` type declaration. Hide it only while parsing msgpack so
+// later Apple framework headers still see their original macro.
+#if defined(__APPLE__) && defined(nil)
+#  pragma push_macro("nil")
+#  undef nil
+#  define CARLA_RESTORE_APPLE_NIL_MACRO
+#endif
+
 #include <rpc/msgpack.hpp>
+
+#if defined(CARLA_RESTORE_APPLE_NIL_MACRO)
+#  pragma pop_macro("nil")
+#  undef CARLA_RESTORE_APPLE_NIL_MACRO
+#endif
 
 namespace carla {
 
@@ -20,7 +34,9 @@ namespace carla {
       namespace mp = ::clmdep_msgpack;
       mp::sbuffer sbuf;
       mp::pack(sbuf, obj);
-      return Buffer(reinterpret_cast<const unsigned char *>(sbuf.data()), sbuf.size());
+      return Buffer(
+          reinterpret_cast<const unsigned char *>(sbuf.data()),
+          static_cast<uint64_t>(sbuf.size()));
     }
 
     template <typename T>
