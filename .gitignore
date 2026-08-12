@@ -41,3 +41,7 @@ _images*
 
 # Temp
 Help.md
+
+# Local M5 runtime state and credentials
+LocalRuntime/
+M5-*-runs/
