@@ -18,8 +18,13 @@ out/
 CMakeSettings.json
 
 .clangd
+.DS_Store
 .env
 .venv
+.venv-*/
+
+# Local macOS native build trees
+/Build-*/
 
 # Compiled objects and libraries (outside Build/)
 *.a
@@ -44,4 +49,6 @@ Help.md
 
 # Local M5 runtime state and credentials
 LocalRuntime/
-M5-*-runs/
+
+# Local milestone acceptance and demonstration runs
+/M[0-9]*-runs*/
