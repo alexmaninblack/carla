@@ -56,7 +56,15 @@ namespace multigpu {
     // This forces not using Nagle's algorithm.
     // Improves the sync mode velocity on Linux by a factor of ~3.
     const boost::asio::ip::tcp::no_delay option(true);
-    _socket.set_option(option);
+    boost::system::error_code ec;
+    _socket.set_option(option, ec);
+    if (ec) {
+      // A completed accept can be delivered during shutdown, after its
+      // socket has closed. It is not an opened session and must not throw
+      // through an io_context worker or invoke the opened callback.
+      log_debug("discarding secondary session before open:", ec.message());
+      return;
+    }
 
     // callbacks
     _on_closed = std::move(on_closed);

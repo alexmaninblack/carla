@@ -28,10 +28,14 @@ namespace multigpu {
   }
   
   void Listener::Stop() {
-    _acceptor.cancel();
-    _acceptor.close();
+    std::lock_guard<std::mutex> lock(_acceptor_mutex);
+    if (_stopped.exchange(true)) {
+      return;
+    }
+    boost::system::error_code ec;
+    _acceptor.cancel(ec);
+    _acceptor.close(ec);
     _io_context.stop();
-    _io_context.restart();
   }
   
   void Listener::OpenSession(
@@ -42,11 +46,19 @@ namespace multigpu {
 
     using boost::system::error_code;
 
+    std::lock_guard<std::mutex> lock(_acceptor_mutex);
+    if (_stopped) {
+      return;
+    }
+
     auto session = std::make_shared<Primary>(_io_context, timeout, *this);
     auto self = shared_from_this();
     
     auto handle_query = [on_opened, on_closed, on_response, session, self](const error_code &ec)
     {
+      if (self->_stopped) {
+        return;
+      }
       if (!ec) {
         session->Open(std::move(on_opened), std::move(on_closed), std::move(on_response));
       } else {
@@ -56,16 +68,19 @@ namespace multigpu {
 
     _acceptor.async_accept(
       session->_socket,
-      [this, handle_query, timeout, on_opened, on_closed, on_response](error_code ec)
+      [self, handle_query, timeout, on_opened, on_closed, on_response](error_code ec)
       {
+        if (self->_stopped) {
+          return;
+        }
         boost::asio::post(
-          _io_context,
+          self->_io_context,
           [ec, handle_query]()
           {
             handle_query(ec);
           });
 
-        OpenSession(timeout, on_opened, on_closed, on_response);
+        self->OpenSession(timeout, on_opened, on_closed, on_response);
       });
   }
 

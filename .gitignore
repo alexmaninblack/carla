@@ -52,3 +52,12 @@ LocalRuntime/
 
 # Local milestone acceptance and demonstration runs
 /M[0-9]*-runs*/
+
+# Local diagnostic workspaces and historical build-only helpers; not product source.
+/.codex-build/
+/.tmp/
+/.worktrees/
+/aos-vehicle-platform-stage-a-runtime-credential-template/
+/find-pinned-aos-core-api.sh
+/import-pinned-aos-core-api.sh
+/Docs/standalone-retention-audit-2026-09-26.md

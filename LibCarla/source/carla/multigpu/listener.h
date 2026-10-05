@@ -15,6 +15,7 @@
 #include <boost/asio/post.hpp>
 
 #include <atomic>
+#include <mutex>
 
 namespace carla {
 namespace multigpu {
@@ -81,6 +82,8 @@ namespace multigpu {
     boost::asio::io_context         &_io_context;
     boost::asio::ip::tcp::acceptor  _acceptor;
     std::atomic<time_duration>      _timeout;
+    std::atomic_bool               _stopped{false};
+    std::mutex                    _acceptor_mutex;
   };
 
 } // namespace multigpu

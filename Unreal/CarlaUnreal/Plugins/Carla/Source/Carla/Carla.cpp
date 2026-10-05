@@ -8,7 +8,9 @@
 #include "Developer/Settings/Public/ISettingsSection.h"
 #include "Developer/Settings/Public/ISettingsContainer.h"
 #include "Interfaces/IPluginManager.h"
+#include "HAL/PlatformProperties.h"
 #include "ShaderCore.h"
+#include "ShaderCompilerCore.h"
 #include <util/ue-header-guard-end.h>
 
 #define LOCTEXT_NAMESPACE "FCarlaModule"
@@ -25,6 +27,11 @@ void FCarlaModule::StartupModule()
 
 void FCarlaModule::AddShaderSearchPaths()
 {
+	// Match RenderCore's source-mapping eligibility. A cooked runtime reads
+	// compiled shader libraries, not the plugin's development Shaders folder.
+	if (FPlatformProperties::RequiresCookedData() || !AllowShaderCompiling())
+		return;
+
 	// The shader virtual path is process-global. Re-running StartupModule
 	// (editor Live Coding / hot-reload) must not register it twice, as
 	// AddShaderSourceDirectoryMapping asserts the path is not already mapped.
