@@ -1,3 +1,87 @@
+# CARLA simulator fork for AosEdge SDV Lab
+
+This is the maintained **Apple Silicon / macOS SDV Lab fork** on `main`,
+not an instruction to build upstream `ue5-dev`.
+CARLA simulates the vehicle/environment; the lab uses the real AosEdge platform on a virtual controller.
+
+## 1 Choose the right route
+
+- **Run the demo:** follow the [SDV Lab README](https://github.com/alexmaninblack/aosedge-sdv-demo).
+  The complete DMG includes standalone CARLA. You do not need Unreal Editor,
+  this source checkout or an engine build.
+- **Build the demo components/installer:** follow the same product README's
+  developer route. Its locked `carla-macos-arm64-r1` input is reused while
+  simulator assets, native ABI and engine behavior are unchanged.
+- **Modify simulation/engine behavior:** use the source-inspection steps below,
+  then the separate full-source route. A UI/backend/service change normally
+  does not require rebuilding the simulator.
+
+## 2 Prepare source access and an external workspace
+
+Install Apple's Command Line Tools (`xcode-select --install`) if Git is missing. Finish the macOS installation dialog before continuing.
+
+In native Apple Silicon Terminal:
+
+```sh
+uname -m
+git --version
+printf 'Mounted external APFS volume (for example /Volumes/BUILD): '
+read -r SDV_VOLUME
+diskutil info "$SDV_VOLUME"
+df -h "$SDV_VOLUME"
+```
+
+Expect `arm64` and an already mounted external APFS volume. Do not create
+a missing mount directory or download engine content to the internal disk.
+A source inspection is smaller than a build; free space here is not proof
+that there is enough room for full engine/assets/shader output.
+
+## 3 Inspect the maintained fork without populating build assets
+
+Only if you need this fork's source history, use a filtered, no-checkout clone:
+
+```sh
+mkdir -p "$SDV_VOLUME/sdv-simulation-source"
+git clone --filter=blob:none --no-checkout --branch main \
+  https://github.com/alexmaninblack/carla.git \
+  "$SDV_VOLUME/sdv-simulation-source/carla"
+cd "$SDV_VOLUME/sdv-simulation-source/carla"
+git log -1 --oneline
+git ls-tree --name-only HEAD
+```
+
+Expected: the maintained fork's current revision and tree listing, **no**
+simulator/editor launch. Do not run a setup/download/build script at this
+stage. A clone may still transfer Git history; it is not the binary dependency.
+For exact candidate reproduction the root release manifest, not moving
+`main`, selects source/artifact identities.
+
+## 4 Build/run only through the declared route
+
+The [full-source guide](https://github.com/alexmaninblack/aosedge-sdv-demo/blob/5e30b410cbeadd2f73063b1bd313253aff612595/docs/getting-started/full-source-build.md)
+records outstanding source/assets/toolchain closure and capacity qualification.
+A clean-Mac full engine rebuild is **not yet a qualified copy/paste route**.
+Use the pinned standalone dependency for ordinary lab builds rather than
+guessing at upstream instructions.
+
+The upstream Linux/Windows recipes retained below are reference material, not
+the SDV Lab macOS recipe. Their branches, host prerequisites and timings must
+not be mixed into the supported developer route. The new walkthrough itself
+has not been executed as part of this documentation-only revision.
+
+## 5 Finish
+
+Source inspection starts no runtime. A complete installed demo must be stopped
+through its owner; close only demo-owned windows/processes and preserve data.
+Do not start a second simulator/editor merely to inspect an existing session.
+
+## Upstream reference and licensing
+
+Original upstream attribution, licenses, citation and platform-specific documentation are preserved below. They do not expand redistribution rights for packaged third-party content.
+
+<details>
+<summary>Original upstream README — reference, not the SDV Lab macOS walkthrough</summary>
+
 CARLA Simulator
 ===============
 
@@ -212,3 +296,5 @@ CARLA uses some dependencies related to 3rd party integrations:
 CARLA uses the Autodesk FBX SDK for converting FBX to OBJ in the import process of maps. This step is optional, and the SDK is located [here](https://www.autodesk.com/developer-network/platform-technologies/fbx-sdk-2020-0)
 
 This software contains Autodesk® FBX® code developed by Autodesk, Inc. Copyright 2020 Autodesk, Inc. All rights, reserved. Such code is provided "as is" and Autodesk, Inc. disclaims any and all warranties, whether express or implied, including without limitation the implied warranties of merchantability, fitness for a particular purpose or non-infringement of third party rights. In no event shall Autodesk, Inc. be liable for any direct, indirect, incidental, special, exemplary, or consequential damages (including, but not limited to, procurement of substitute goods or services; loss of use, data, or profits; or business interruption) however caused and on any theory of liability, whether in contract, strict liability, or tort (including negligence or otherwise) arising in any way out of such code."
+
+</details>
