@@ -16,7 +16,7 @@ CARLA simulates the vehicle/environment; the lab uses the real AosEdge platform 
   then the separate full-source route. A UI/backend/service change normally
   does not require rebuilding the simulator.
 
-## 2 Prepare source access and an external workspace
+## 2 Prepare source access and choose storage
 
 Install Apple's Command Line Tools (`xcode-select --install`) if Git is missing. Finish the macOS installation dialog before continuing.
 
@@ -25,27 +25,31 @@ In native Apple Silicon Terminal:
 ```sh
 uname -m
 git --version
-printf 'Mounted external APFS volume (for example /Volumes/BUILD): '
-read -r SDV_VOLUME
-diskutil info "$SDV_VOLUME"
-df -h "$SDV_VOLUME"
+printf 'Existing local APFS parent folder (absolute path): '
+read -r SDV_PARENT
+test -d "$SDV_PARENT" && test -w "$SDV_PARENT" && df -h "$SDV_PARENT"
 ```
 
-Expect `arm64` and an already mounted external APFS volume. Do not create
-a missing mount directory or download engine content to the internal disk.
-A source inspection is smaller than a build; free space here is not proof
-that there is enough room for full engine/assets/shader output.
+Expect `arm64` and an existing writable folder on a local APFS volume.
+Both internal and external storage are supported when capacity is sufficient.
+Stop if a check fails. If an external volume is absent, reconnect it; do not
+create a replacement folder at its missing mount path.
+
+Use the [current developer preparation guide](https://github.com/alexmaninblack/aosedge-sdv-demo/blob/main/docs/getting-started/macos-developer-tools.md)
+for filesystem, tools and capacity checks. The small source inspection below
+is not a full-build capacity check. Full engine/assets/shader peaks remain
+unqualified; choose storage deliberately before any source or asset download.
 
 ## 3 Inspect the maintained fork without populating build assets
 
 Only if you need this fork's source history, use a filtered, no-checkout clone:
 
 ```sh
-mkdir -p "$SDV_VOLUME/sdv-simulation-source"
+mkdir -p "$SDV_PARENT/sdv-simulation-source"
 git clone --filter=blob:none --no-checkout --branch main \
   https://github.com/alexmaninblack/carla.git \
-  "$SDV_VOLUME/sdv-simulation-source/carla"
-cd "$SDV_VOLUME/sdv-simulation-source/carla"
+  "$SDV_PARENT/sdv-simulation-source/carla"
+cd "$SDV_PARENT/sdv-simulation-source/carla"
 git log -1 --oneline
 git ls-tree --name-only HEAD
 ```
@@ -58,7 +62,7 @@ For exact candidate reproduction the root release manifest, not moving
 
 ## 4 Build/run only through the declared route
 
-The [full-source guide](https://github.com/alexmaninblack/aosedge-sdv-demo/blob/5e30b410cbeadd2f73063b1bd313253aff612595/docs/getting-started/full-source-build.md)
+The [current full-source guide](https://github.com/alexmaninblack/aosedge-sdv-demo/blob/main/docs/getting-started/full-source-build.md)
 records outstanding source/assets/toolchain closure and capacity qualification.
 A clean-Mac full engine rebuild is **not yet a qualified copy/paste route**.
 Use the pinned standalone dependency for ordinary lab builds rather than
@@ -66,8 +70,8 @@ guessing at upstream instructions.
 
 The upstream Linux/Windows recipes retained below are reference material, not
 the SDV Lab macOS recipe. Their branches, host prerequisites and timings must
-not be mixed into the supported developer route. The new walkthrough itself
-has not been executed as part of this documentation-only revision.
+not be mixed into the supported developer route. Source inspection is not
+evidence of a complete source build or runtime acceptance.
 
 ## 5 Finish
 
