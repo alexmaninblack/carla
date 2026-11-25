@@ -179,16 +179,25 @@ protected:
     uint64_t FrameIndex                   // Current frame index.
     )
   {
-    using carla::sensor::SensorRegistry;
-    using SensorT = std::remove_const_t<std::remove_reference_t<SensorType>>;
-    constexpr size_t HeaderOffset = SensorRegistry::get<SensorT*>::type::header_offset;
-
     if (!Sensor.AreClientsListening())
         return;
 
     auto Stream = Sensor.GetDataStream(Sensor);
     Stream.SetFrameNumber(FrameIndex);
-    
+    SendDataToClient(Sensor, SensorData, Stream);
+  }
+
+  /// Send a sample using the stream header saved at capture time.
+  template <typename SensorType, typename ElementType>
+  static void SendDataToClient(
+    SensorType &Sensor,
+    TArrayView<ElementType> SensorData,
+    FAsyncDataStream &Stream)
+  {
+    using carla::sensor::SensorRegistry;
+    using SensorT = std::remove_const_t<SensorType>;
+    constexpr size_t HeaderOffset = SensorRegistry::get<SensorT*>::type::header_offset;
+
     auto Buffer = Stream.PopBufferFromPool();
     Buffer.copy_from(
       HeaderOffset,

@@ -453,6 +453,10 @@ The provided script `manual_control.py` uses this sensor to show the points bein
 The "RGB" camera acts as a regular camera capturing images from the scene.
 [carla.colorConverter](python_api.md#carla.ColorConverter)
 
+The image's `frame`, simulation `timestamp` and camera `transform` describe
+the capture tick. Image delivery can occur in a later tick while the pixels
+are read back from the GPU.
+
 If `enable_postprocess_effects` is enabled, a set of post-process effects is applied to the image for the sake of realism:
 
 * __Vignette:__ darkens the border of the screen.

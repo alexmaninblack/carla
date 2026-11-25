@@ -105,6 +105,47 @@ class TestEncodingCameras(SyncSmokeTest):
 
     # -- tests ----------------------------------------------------------
 
+    def test_rgb_metadata_matches_capture_tick_on_moving_vehicle(self):
+        start = self.world.get_map().get_spawn_points()[0]
+        blueprints = self.world.get_blueprint_library()
+        ego = self.world.spawn_actor(blueprints.find("vehicle.lincoln.mkz"), start)
+        try:
+            ego.set_simulate_physics(False)
+            blueprint = blueprints.find("sensor.camera.rgb")
+            blueprint.set_attribute("image_size_x", "320")
+            blueprint.set_attribute("image_size_y", "240")
+            camera = self.world.spawn_actor(
+                blueprint, carla.Transform(carla.Location(x=1.6, z=1.5)),
+                attach_to=ego, attachment_type=carla.AttachmentType.Rigid)
+            try:
+                images = Queue()
+                camera.listen(images.put)
+                snapshots = {}
+                direction = start.get_forward_vector()
+                for step in range(20):
+                    ego.set_transform(carla.Transform(
+                        start.location + direction * (0.25 * step), start.rotation))
+                    self.world.tick()
+                    snapshot = self.world.get_snapshot()
+                    snapshots[snapshot.frame] = snapshot
+
+                for _ in range(8):
+                    image = images.get(timeout=3)
+                    snapshot = snapshots[image.frame]
+                    self.assertAlmostEqual(
+                        image.timestamp, snapshot.timestamp.elapsed_seconds, places=7,
+                        msg=f"RGB camera timestamp at frame {image.frame}")
+                    expected = snapshot.find(camera.id).get_transform().get_matrix()
+                    for actual_row, expected_row in zip(image.transform.get_matrix(), expected):
+                        for actual, value in zip(actual_row, expected_row):
+                            self.assertAlmostEqual(
+                                actual, value, places=3, msg=f"RGB camera pose at frame {image.frame}")
+            finally:
+                camera.stop()
+                camera.destroy()
+        finally:
+            ego.destroy()
+
     def test_depth_camera_emits_stable_encoded_pixels(self):
         frames = self._capture_frames("sensor.camera.depth")
         self.assertGreaterEqual(len(frames), 5)
