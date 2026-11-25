@@ -6,7 +6,8 @@
 
 #include "Carla/Sensor/SceneCaptureCamera.h"
 #include "Carla.h"
-#include "Carla/Game/CarlaEngine.h"
+
+#include <memory>
 
 #include <util/ue-header-guard-begin.h>
 #include "Actor/ActorBlueprintFunctionLibrary.h"
@@ -53,12 +54,15 @@ void ASceneCaptureCamera::PostPhysTick(UWorld *World, ELevelTick TickType, float
   if (!AreClientsListening())
       return;
 
-  auto FrameIndex = FCarlaEngine::GetFrameCounter();
-  ImageUtil::ReadSensorImageDataAsyncFColor(*this, [this, FrameIndex](
+  // Save the frame, simulation time and pose before asynchronous GPU readback.
+  // The copyable readback callback owns this single-use stream header.
+  auto Stream = std::make_shared<FAsyncDataStream>(GetDataStream(*this));
+  ImageUtil::ReadSensorImageDataAsyncFColor(*this, [this, Stream](
     TArrayView<const FColor> Pixels,
     FIntPoint Size) -> bool
   {
-    SendDataToClient(*this, Pixels, FrameIndex);
+    if (AreClientsListening())
+      SendDataToClient(*this, Pixels, *Stream);
     return true;
   });
 }
